@@ -400,6 +400,18 @@ ipcMain.on('connectPort', (event, portPath) => {
     return;
   }
   if (!board.transport.isOpen) {
+
+
+
+    ////////////////////////////////////////////////
+    /// compulsion Analog 3 pin Support NeoPixel ///
+    ////////////////////////////////////////////////
+    //onsole.log(board);
+    board.pins[21].supportedModes[3] = 128;
+    board.MODES['NEOPIXEL'] = 128;
+
+
+
     board.transport.open();
     board.transport.once('open', () => {
       setTimeout(() => {

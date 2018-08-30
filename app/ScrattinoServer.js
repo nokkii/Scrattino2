@@ -24,12 +24,42 @@ let pinModeConf = {
   UNKOWN: 0x10
 };
 
+const START_SYSEX = 0xF0;
+const NEOPIXEL = 0x72;
+const END_SYSEX = 0xF7;
+
+let rcolor = 0;
+let gcolor = 0;
+let bcolor = 0;
+
 function ScrattinoServer(firmataService) {
   this.firmataService = firmataService;
 }
 
 ScrattinoServer.prototype.createServer = function () {
   let server = http.createServer();
+
+  function ChangeColor(board, num, rcolor, gcolor, bcolor) {
+    board.transport.write(
+      Buffer.from([
+        START_SYSEX,
+        NEOPIXEL,
+        num,
+        gcolor,
+        rcolor,
+        bcolor,
+        END_SYSEX
+      ]), function() {});
+  }
+
+  function NormalizationAdd(value, add) {
+    let sum = value + add;
+    sum = (sum > 255) ? 255 : sum;
+    sum = (sum < 0)   ?   0 : sum;
+    return sum;
+  }
+
+
   server.on('request', (req, res) => {
     let targetBoard = this.firmataService.getBoard(); // only one board can be used at this version.
     let content = '';
@@ -84,6 +114,8 @@ ScrattinoServer.prototype.createServer = function () {
             targetBoard.analogWrite(pinIndex, 0);
           } else if (pin.mode == targetBoard.MODES.SERVO) {
             targetBoard.servoWrite(pinIndex, 0);
+          } else if (pin.mode == targetBoard.MODES.NEOPIXEL) {
+            targetBoard.analogWrite(pinIndex, 0);
           }
         });
       } else if (path[1] == 'pinValue') {
@@ -127,6 +159,21 @@ ScrattinoServer.prototype.createServer = function () {
         }
       } else if (path[1] == 'sendString') {
         targetBoard.sendString(decodeURIComponent(path[2]));
+      } else if (path[1] == 'ledColor') {
+        rcolor = NormalizationAdd(parseInt(path[2]), 0);
+        gcolor = NormalizationAdd(parseInt(path[3]), 0);
+        bcolor = NormalizationAdd(parseInt(path[4]), 0);
+        ChangeColor(targetBoard, 0, rcolor, gcolor, bcolor);
+
+      } else if (path[1].match(/^[rgb]Color$/)) {
+        if (path[1][0] == 'r') {
+          rcolor = NormalizationAdd(parseInt(path[2]), 0);
+        } else if (path[1][0] == 'g') {
+          gcolor = NormalizationAdd(parseInt(path[2]), 0);
+        } else if (path[1][0] == 'b') {
+          bcolor = NormalizationAdd(parseInt(path[2]), 0);
+        }
+        ChangeColor(targetBoard, 0, rcolor, gcolor, bcolor);
       }
     } else {
       // no target board

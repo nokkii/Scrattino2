@@ -263,6 +263,9 @@ FirmataService.prototype.getBoardConfig = function (board) {
             }
             pinCfg.value = pin.value;
             break;
+          case board.MODES.NEOPIXEL :
+            //
+            break;
           default:
         }
       }
@@ -296,6 +299,8 @@ FirmataService.prototype.applyBoardConfig = function (config, board) {
           }
           board.servoWrite(pinIndex, pinCfg.value);
           break;
+        case board.MODES.NEOPIXEL :
+          //
         default:
       }
     }

@@ -11,6 +11,15 @@ function FirmataBoard() {
 FirmataBoard.prototype = Object.create(Board.prototype);
 
 FirmataBoard.prototype.pinMode = function (pinIndex, pinMode, ...args) {
+  const START_SYSEX = 0xF0;
+  //const NEOPIXEL = 0x72;
+  //const NEOMATRIX = 0x73;
+  const NEOPIXEL_REGISTER = 0x74;
+  //const NEOMATRIX_REGISTER = 0x75;
+  const END_SYSEX = 0xF7;
+
+
+
   const pinReporting = 1;
   switch (pinMode) {
     case this.MODES.PULLUP:
@@ -47,6 +56,16 @@ FirmataBoard.prototype.pinMode = function (pinIndex, pinMode, ...args) {
         // Use default servo angles.
         Board.prototype.pinMode.call(this, pinIndex, pinMode);
       }
+      break;
+    case this.MODES.NEOPIXEL:
+      var board = this;
+
+      Board.prototype.pinMode.call(this, pinIndex, this.MODES.NEOPIXEL);
+
+      board.pending++;
+      board.transport.write(Buffer.from([START_SYSEX, NEOPIXEL_REGISTER, pinIndex, 1, END_SYSEX]), function() {
+        board.pending--;
+      });
       break;
     default:
       Board.prototype.pinMode.call(this, pinIndex, pinMode);
